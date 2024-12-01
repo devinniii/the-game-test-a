@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Highscore Klick-Spiel mit Effekten</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            background: linear-gradient(to bottom, #4e54c8, #8f94fb);
+            color: #fff;
+            overflow: hidden;
+            height: 100vh;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        #gameArea {
+            position: relative;
+            width: 80vw;
+            height: 60vh;
+            margin: 20px auto;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        #circle {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #ff6b6b, #ff4757);
+            border-radius: 50%;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        #score, #highscore, #startButton {
+            font-size: 1.5rem;
+            margin: 10px;
+        }
+
+        #startButton {
+            padding: 10px 20px;
+            font-size: 1rem;
+            color: #fff;
+            background: #ff4757;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #startButton:hover {
+            background: #ff6b6b;
+        }
+
+        /* Partikel-Animation */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #ff6b6b, #fff);
+            border-radius: 50%;
+            animation: particleExplosion 1.5s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes particleExplosion {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) translate(var(--x), var(--y));
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0) translate(var(--x), var(--y));
+                opacity: 0;
+            }
+        }
+
+        /* Zickzack Blitz-Animation */
+        @keyframes zigzagBlitz {
+            0% {
+                transform: translateX(0) scaleY(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100vw) scaleY(10);
+                opacity: 0;
+            }
+        }
+
+        .blitz {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 2px;
+            background: #ff4757;
+            box-shadow: 0px 0px 30px rgba(255, 255, 255, 0.7);
+            animation: zigzagBlitz 0.3s ease-out forwards;
+        }
+
+        /* Zittern der Seite */
+        @keyframes shake {
+            0% {
+                transform: translate(0, 0);
+            }
+            25% {
+                transform: translate(-10px, 0);
+            }
+            50% {
+                transform: translate(10px, 0);
+            }
+            75% {
+                transform: translate(-10px, 0);
+            }
+            100% {
+                transform: translate(0, 0);
+            }
+        }
+
+        .shaking {
+            animation: shake 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>Highscore Klick-Spiel mit Effekten</h1>
+    <div id="deviceSelector">
+        <p>Bitte wähle dein Gerät:</p>
+        <button onclick="setDevice('mobile')">Handy</button>
+        <button onclick="setDevice('desktop')">PC</button>
+    </div>
+    <div id="gameContainer" style="display: none;">
+        <div id="gameArea">
+            <div id="circle"></div>
+        </div>
+        <p id="score">Punkte: 0</p>
+        <p id="highscore">Highscore: Wird geladen...</p>
+        <button id="startButton">Start</button>
+    </div>
+
+    <script>
+        const circle = document.getElementById('circle');
+        const gameArea = document.getElementById('gameArea');
+        const scoreDisplay = document.getElementById('score');
+        const highscoreDisplay = document.getElementById('highscore');
+        const startButton = document.getElementById('startButton');
+        const deviceSelector = document.getElementById('deviceSelector');
+        const gameContainer = document.getElementById('gameContainer');
+
+        let score = 0;
+        let highscore = 0;
+        let gameActive = false;
+        let pointsPerClick = 1;
+
+        // Hole den gespeicherten Highscore aus localStorage
+        function loadHighscore() {
+            const storedHighscore = localStorage.getItem('highscore');
+            if (storedHighscore) {
+                highscore = parseInt(storedHighscore);
+                highscoreDisplay.textContent = `Highscore: ${highscore}`;
+            } else {
+                highscoreDisplay.textContent = `Highscore: 0`;
+            }
+        }
+
+        // Speichere den Highscore in localStorage
+        function saveHighscore() {
+            localStorage.setItem('highscore', highscore);
+        }
+
+        // Anpassung basierend auf Geräteauswahl
+        function setDevice(device) {
+            if (device === 'mobile') {
+                gameArea.style.width = '90vw';
+                gameArea.style.height = '70vh';
+                circle.style.width = '80px';
+                circle.style.height = '80px';
+                pointsPerClick = 2;
+            } else if (device === 'desktop') {
+                gameArea.style.width = '80vw';
+                gameArea.style.height = '60vh';
+                circle.style.width = '60px';
+                circle.style.height = '60px';
+                pointsPerClick = 1;
+            }
+
+            deviceSelector.style.display = 'none';
+            gameContainer.style.display = 'block';
+        }
+
+        // Bewege den Kreis zufällig
+        function moveCircle() {
+            const maxX = gameArea.offsetWidth - circle.offsetWidth;
+            const maxY = gameArea.offsetHeight - circle.offsetHeight;
+
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+
+            circle.style.left = randomX + 'px';
+            circle.style.top = randomY + 'px';
+        }
+
+        // Partikel erzeugen
+        function createParticles(x, y) {
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                gameArea.appendChild(particle);
+
+                const angle = Math.random() * 360;
+                const distance = Math.random() * 100 + 50;
+                const xOffset = Math.cos(angle) * distance;
+                const yOffset = Math.sin(angle) * distance;
+
+                particle.style.left = `${x - 4}px`;
+                particle.style.top = `${y - 4}px`;
+                particle.style.setProperty('--x', `${xOffset}px`);
+                particle.style.setProperty('--y', `${yOffset}px`);
+
+                setTimeout(() => {
+                    particle.remove();
+                }, 1500);
+            }
+        }
+
+        // Blitz-Effekt erzeugen
+        function createBlitz(x, y) {
+            const blitz = document.createElement('div');
+            blitz.classList.add('blitz');
+            gameArea.appendChild(blitz);
+
+            blitz.style.left = `${x - 1}px`;
+            blitz.style.top = `${y - 1}px`;
+
+            setTimeout(() => {
+                blitz.remove();
+            }, 300);
+        }
+
+        // Bildschirm zittern lassen
+        function shakeScreen() {
+            document.body.classList.add('shaking');
+            setTimeout(() => {
+                document.body.classList.remove('shaking');
+            }, 300);
+        }
+
+        // Starte das Spiel
+        function startGame() {
+            score = 0;
+            scoreDisplay.textContent = `Punkte: ${score}`;
+            gameActive = true;
+            moveCircle();
+
+            setTimeout(() => {
+                gameActive = false;
+                alert(`Spiel vorbei! Dein Score: ${score}`);
+                if (score > highscore) {
+                    highscore = score;
+                    highscoreDisplay.textContent = `Highscore: ${highscore}`;
+                    saveHighscore();
+                }
+            }, 30000);
+        }
+
+        // Event Listener für Klick auf den Bildschirm
+        gameArea.addEventListener('click', (event) => {
+            if (gameActive) {
+                score += pointsPerClick;
+                scoreDisplay.textContent = `Punkte: ${score}`;
+                moveCircle();
+                createParticles(event.clientX, event.clientY);
+                createBlitz(event.clientX, event.clientY);
+                shakeScreen();
+            }
+        });
+
+        // Event Listener für Startbutton
+        startButton.addEventListener('click', startGame);
+
+        loadHighscore();
+
+        // Event Listener für STRG + L (Highscore zurücksetzen)
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'l') {
+                e.preventDefault();
+                highscore = 0;
+                highscoreDisplay.textContent = `Highscore: ${highscore}`;
+                saveHighscore();
+            }
+        });
+    </script>
+</body>
+</html>
